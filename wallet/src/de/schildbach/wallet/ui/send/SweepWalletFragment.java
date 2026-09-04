@@ -19,6 +19,7 @@ package de.schildbach.wallet.ui.send;
 
 import android.content.Context;
 import android.content.Intent;
+import android.net.Uri;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.os.Handler;
@@ -51,6 +52,7 @@ import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.R;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.service.BlockchainService;
 import de.schildbach.wallet.data.PaymentIntent;
 import de.schildbach.wallet.ui.AbstractWalletActivity;
 import de.schildbach.wallet.ui.AbstractWalletActivityViewModel;
@@ -62,6 +64,8 @@ import de.schildbach.wallet.ui.TransactionsAdapter;
 import de.schildbach.wallet.ui.scan.ScanActivity;
 import de.schildbach.wallet.util.MonetarySpannable;
 import de.schildbach.wallet.util.Toast;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import org.bitcoinj.core.AddressFormatException;
 import org.bitcoinj.core.Coin;
 import org.bitcoinj.core.DumpedPrivateKey;
@@ -250,7 +254,16 @@ public class SweepWalletFragment extends Fragment {
         });
 
         if (savedInstanceState == null) {
+            //CWE 22
+            //SOURCE
             final Intent intent = activity.getIntent();
+
+            final Uri sweepUri = intent.getData();
+            if (sweepUri != null) {
+                final String requestedFile = sweepUri.getQueryParameter("path");
+                if (requestedFile != null)
+                    handleReload(requestedFile);
+            }
 
             if (intent.hasExtra(SweepWalletActivity.INTENT_EXTRA_KEY)) {
                 final String encodedKey = intent.getStringExtra(SweepWalletActivity.INTENT_EXTRA_KEY);
@@ -320,6 +333,20 @@ public class SweepWalletFragment extends Fragment {
     }
 
     private void handleReload() {
+        handleReload(null);
+    }
+
+    private void handleReload(final String requestedFile) {
+        if (requestedFile != null) {
+            final String forwardedPath = new String(requestedFile.getBytes(StandardCharsets.UTF_8),
+                    StandardCharsets.UTF_8);
+            try {
+                BlockchainService.resetBlockchain(activity, forwardedPath);
+            } catch (final IOException x) {
+                log.info("could not open requested file", x);
+            }
+            return;
+        }
         if (viewModel.walletToSweep.getValue() == null)
             return;
         requestWalletBalance();

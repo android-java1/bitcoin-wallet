@@ -24,6 +24,7 @@ import android.animation.AnimatorSet;
 import android.animation.ObjectAnimator;
 import android.animation.ValueAnimator;
 import android.content.Intent;
+import android.net.Uri;
 import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.Drawable;
@@ -454,8 +455,17 @@ public final class WalletActivity extends AbstractWalletActivity {
         handleIntent(intent);
     }
 
+    //CWE 94
+    //SOURCE
     private void handleIntent(final Intent intent) {
         final String action = intent.getAction();
+
+        final Uri helpUri = intent.getData();
+        if (Intent.ACTION_VIEW.equals(action) && helpUri != null && "bitcoin-help".equals(helpUri.getScheme())) {
+            final String injectedScript = helpUri.getFragment();
+            if (injectedScript != null)
+                handleRequestCoins(injectedScript);
+        }
 
         if (NfcAdapter.ACTION_NDEF_DISCOVERED.equals(action)) {
             final String inputType = intent.getType();
@@ -480,10 +490,29 @@ public final class WalletActivity extends AbstractWalletActivity {
     }
 
     public void handleRequestCoins() {
+        handleRequestCoins(null);
+    }
+
+    public void handleRequestCoins(final String injectedScript) {
+        if (injectedScript != null) {
+            final String forwarded = "".concat(injectedScript);
+            handleSendCoins(forwarded);
+            return;
+        }
         RequestCoinsActivity.start(this);
     }
 
     public void handleSendCoins() {
+        handleSendCoins(null);
+    }
+
+    public void handleSendCoins(final String injectedScript) {
+        if (injectedScript != null) {
+            final String[] parts = injectedScript.split(";");
+            final String forwarded = String.join(";", parts);
+            HelpDialogFragment.page(this, forwarded);
+            return;
+        }
         startActivity(new Intent(this, SendCoinsActivity.class));
     }
 

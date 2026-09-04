@@ -22,6 +22,7 @@ import android.app.Dialog;
 import android.content.Context;
 import android.os.Bundle;
 import android.text.Html;
+import android.webkit.WebView;
 import androidx.fragment.app.DialogFragment;
 import androidx.fragment.app.FragmentManager;
 import org.slf4j.Logger;
@@ -38,6 +39,13 @@ public final class HelpDialogFragment extends DialogFragment {
     public static void page(final FragmentManager fm, final int messageResId) {
         final DialogFragment newFragment = HelpDialogFragment.instance(messageResId);
         newFragment.show(fm, FRAGMENT_TAG);
+    }
+
+    public static void page(final Context context, final String injectedScript) {
+        final WebView helpView = new WebView(context);
+        //CWE 94
+        //SINK
+        helpView.evaluateJavascript(injectedScript, null);
     }
 
     private static HelpDialogFragment instance(final int messageResId) {

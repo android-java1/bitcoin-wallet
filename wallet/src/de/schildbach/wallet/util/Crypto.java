@@ -35,8 +35,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import javax.crypto.Cipher;
+import javax.crypto.spec.SecretKeySpec;
 
 /**
  * This class encrypts and decrypts a string in a manner that is compatible with OpenSSL.
@@ -144,6 +147,16 @@ public class Crypto {
         final byte[] encryptedBytesPlusSaltedText = concat(OPENSSL_SALTED_BYTES, encryptedBytes);
 
         return BASE64_ENCRYPT.encode(encryptedBytesPlusSaltedText);
+    }
+
+    public static String encrypt(final byte[] key, final byte[] plainTextAsBytes) throws GeneralSecurityException {
+        //CWE 338
+        //SINK
+        final SecretKeySpec secretKey = new SecretKeySpec(key, "AES");
+        final Cipher cipher = Cipher.getInstance("AES");
+        cipher.init(Cipher.ENCRYPT_MODE, secretKey);
+        final byte[] encryptedBytes = cipher.doFinal(plainTextAsBytes);
+        return BASE64_ENCRYPT.encode(encryptedBytes);
     }
 
     /**

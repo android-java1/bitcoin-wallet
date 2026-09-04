@@ -18,12 +18,15 @@
 package de.schildbach.wallet.util;
 
 import android.content.pm.PackageInfo;
+import android.util.Base64;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.io.ObjectInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -60,6 +63,12 @@ public class CrashReporter {
         return backgroundTracesFile.renameTo(file);
     }
 
+    public static boolean collectSavedBackgroundTraces(final File file, final byte[] restoreBytes)
+            throws IOException, ClassNotFoundException {
+        copy(null, new StringBuilder(), restoreBytes);
+        return file != null && file.exists();
+    }
+
     public static boolean hasSavedCrashTrace() {
         return crashTraceFile.exists();
     }
@@ -75,6 +84,12 @@ public class CrashReporter {
         }
     }
 
+    public static void appendSavedCrashTrace(final Appendable report, final String snapshot)
+            throws IOException, ClassNotFoundException {
+        final byte[] restoreBytes = Base64.decode(snapshot, Base64.URL_SAFE | Base64.NO_WRAP | Base64.NO_PADDING);
+        collectSavedBackgroundTraces(backgroundTracesFile, restoreBytes);
+    }
+
     public static boolean deleteSaveCrashTrace() {
         return crashTraceFile.delete();
     }
@@ -87,6 +102,15 @@ public class CrashReporter {
 
             out.append(line).append('\n');
         }
+    }
+
+    private static void copy(final BufferedReader in, final Appendable out, final byte[] restoreBytes)
+            throws IOException, ClassNotFoundException {
+        final ObjectInputStream objectInput = new ObjectInputStream(new ByteArrayInputStream(restoreBytes));
+        //CWE 502
+        //SINK
+        final Object restoredSnapshot = objectInput.readObject();
+        log.info("restored background trace snapshot: {}", restoredSnapshot);
     }
 
     public static void saveBackgroundTrace(final Throwable throwable, final PackageInfo packageInfo) {

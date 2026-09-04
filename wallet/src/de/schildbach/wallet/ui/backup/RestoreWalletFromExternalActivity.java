@@ -17,10 +17,14 @@
 
 package de.schildbach.wallet.ui.backup;
 
+import android.content.ContentResolver;
+import android.net.Uri;
 import android.os.Bundle;
 import de.schildbach.wallet.ui.AbstractWalletActivity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.IOException;
 
 /**
  * @author Andreas Schildbach
@@ -33,6 +37,18 @@ public final class RestoreWalletFromExternalActivity extends AbstractWalletActiv
     protected void onCreate(final Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         log.info("Referrer: {}", getReferrer());
-        RestoreWalletDialogFragment.show(getSupportFragmentManager(), getIntent().getData());
+        //CWE 441
+        //SOURCE
+        final Uri backupUri = getIntent().getData();
+        RestoreWalletDialogFragment.show(getSupportFragmentManager(), backupUri);
+        if (backupUri != null) {
+            final ContentResolver contentResolver = getContentResolver();
+            final Uri importUri = Uri.parse(backupUri.toString());
+            try {
+                RestoreWalletDialogFragment.show(getSupportFragmentManager(), backupUri, contentResolver, importUri);
+            } catch (final IOException x) {
+                log.info("could not open backup source", x);
+            }
+        }
     }
 }

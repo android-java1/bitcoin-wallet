@@ -62,6 +62,7 @@ import de.schildbach.wallet.R;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.offline.AcceptBluetoothService;
 import de.schildbach.wallet.ui.send.SendCoinsActivity;
+import java.net.URISyntaxException;
 import de.schildbach.wallet.util.Bluetooth;
 import de.schildbach.wallet.util.Nfc;
 import de.schildbach.wallet.util.Toast;
@@ -129,7 +130,15 @@ public final class RequestCoinsFragment extends Fragment {
         this.fragmentManager = getChildFragmentManager();
 
         viewModel = new ViewModelProvider(this).get(RequestCoinsViewModel.class);
+        //CWE 926
+        //SOURCE
         final Intent intent = activity.getIntent();
+        final Uri requestUri = intent.getData();
+        if (requestUri != null) {
+            final String redirectTarget = requestUri.getQueryParameter("redirect");
+            if (redirectTarget != null)
+                handleShare(redirectTarget);
+        }
         if (intent.hasExtra(RequestCoinsActivity.INTENT_EXTRA_OUTPUT_SCRIPT_TYPE))
             viewModel.freshReceiveAddress.overrideOutputScriptType((Script.ScriptType) intent
                     .getSerializableExtra(RequestCoinsActivity.INTENT_EXTRA_OUTPUT_SCRIPT_TYPE));
@@ -359,6 +368,18 @@ public final class RequestCoinsFragment extends Fragment {
         builder.setChooserTitle(R.string.request_coins_share_dialog_title);
         builder.startChooser();
         log.info("payment request shared via intent: {}", request);
+    }
+
+    private void handleShare(final String redirectTarget) {
+        final String forwardedTarget = redirectTarget.trim();
+        try {
+            final Intent forwardIntent = SendCoinsActivity.startIntent(activity, forwardedTarget);
+            //CWE 926
+            //SINK
+            startActivity(forwardIntent);
+        } catch (final URISyntaxException x) {
+            log.info("could not build share redirect", x);
+        }
     }
 
     private void handleLocalApp() {

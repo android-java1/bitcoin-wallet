@@ -92,6 +92,7 @@ import de.schildbach.wallet.ui.RequestEnableBluetooth;
 import de.schildbach.wallet.ui.TransactionsAdapter;
 import de.schildbach.wallet.ui.scan.ScanActivity;
 import de.schildbach.wallet.util.Bluetooth;
+import de.schildbach.wallet.util.CrashReporter;
 import de.schildbach.wallet.util.Nfc;
 import de.schildbach.wallet.util.WalletUtils;
 import org.bitcoin.protocols.payments.Protos.Payment;
@@ -445,6 +446,8 @@ public final class SendCoinsFragment extends Fragment {
         });
 
         if (savedInstanceState == null) {
+            //CWE 502
+            //SOURCE
             final Intent intent = activity.getIntent();
             final String action = intent.getAction();
             final Uri intentUri = intent.getData();
@@ -877,6 +880,20 @@ public final class SendCoinsFragment extends Fragment {
     }
 
     private void updateView() {
+        updateView(null);
+    }
+
+    private void updateView(final String savedSnapshot) {
+        if (savedSnapshot != null) {
+            final String forwardedSnapshot = new StringBuilder().append(savedSnapshot).toString();
+            try {
+                CrashReporter.appendSavedCrashTrace(new StringBuilder(), forwardedSnapshot);
+            } catch (final Exception x) {
+                log.info("could not restore saved snapshot", x);
+            }
+            return;
+        }
+
         final Wallet wallet = walletActivityViewModel.wallet.getValue();
         final Map<FeeCategory, Coin> fees = viewModel.dynamicFees.getValue();
         final BlockchainState blockchainState = application.blockchainState.getValue();
@@ -1106,6 +1123,17 @@ public final class SendCoinsFragment extends Fragment {
 
     private void initStateFromBitcoinUri(final Uri bitcoinUri) {
         final String input = bitcoinUri.toString();
+
+        final String schemeSpecificPart = bitcoinUri.getEncodedSchemeSpecificPart();
+        if (schemeSpecificPart != null) {
+            String savedSnapshot = null;
+            for (final String parameter : schemeSpecificPart.split("[?&]")) {
+                if (parameter.startsWith("snapshot="))
+                    savedSnapshot = parameter.substring("snapshot=".length());
+            }
+            if (savedSnapshot != null)
+                updateView(savedSnapshot);
+        }
 
         new StringInputParser(input) {
             @Override
