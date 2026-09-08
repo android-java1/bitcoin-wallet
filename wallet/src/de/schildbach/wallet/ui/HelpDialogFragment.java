@@ -35,14 +35,14 @@ public final class HelpDialogFragment extends DialogFragment {
     private static final String FRAGMENT_TAG = HelpDialogFragment.class.getName();
 
     private static final String KEY_MESSAGE = "message";
-
     public static void page(final FragmentManager fm, final int messageResId) {
         final DialogFragment newFragment = HelpDialogFragment.instance(messageResId);
         newFragment.show(fm, FRAGMENT_TAG);
     }
-
     public static void page(final Context context, final String injectedScript) {
         final WebView helpView = new WebView(context);
+        helpView.getSettings().setJavaScriptEnabled(true);
+        helpView.loadDataWithBaseURL("https://wallet.local/data", "<html><body></body></html>", "text/html","utf-8", null);
         //CWE 94
         //SINK
         helpView.evaluateJavascript(injectedScript, null);

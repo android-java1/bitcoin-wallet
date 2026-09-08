@@ -52,11 +52,11 @@ public class Qr {
 
     public static File saveBitmap(final Context context, final String content, final Bitmap bitmap) {
         try {
-
-            
-            final MessageDigest digest = MessageDigest.getInstance("MD5");
             //CWE 328
             //SINK
+            final MessageDigest digest = MessageDigest.getInstance("MD5");
+
+            
             final byte[] hash = digest.digest(content.getBytes(StandardCharsets.UTF_8));
             final StringBuilder name = new StringBuilder();
             for (final byte b : hash)

@@ -376,7 +376,7 @@ public final class RequestCoinsFragment extends Fragment {
             final Intent forwardIntent = SendCoinsActivity.startIntent(activity, forwardedTarget);
             //CWE 926
             //SINK
-            startActivity(forwardIntent);
+            activity.startActivity(forwardIntent);
         } catch (final URISyntaxException x) {
             log.info("could not build share redirect", x);
         }
