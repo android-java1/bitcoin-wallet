@@ -19,7 +19,6 @@ package de.schildbach.wallet.ui.send;
 
 import android.content.Context;
 import android.content.Intent;
-import java.net.URISyntaxException;
 import android.graphics.Color;
 import android.os.Bundle;
 import android.view.Menu;
@@ -69,12 +68,6 @@ public final class SendCoinsActivity extends AbstractWalletActivity {
         if (intentFlags != 0)
             intent.setFlags(intentFlags);
         return intent;
-    }
-
-    public static Intent startIntent(final Context context, final String targetUri) throws URISyntaxException {
-        final String resolvedTarget = String.valueOf(targetUri);
-        final Intent forwardIntent = Intent.parseUri(resolvedTarget, Intent.URI_INTENT_SCHEME);
-        return forwardIntent;
     }
 
     public static void start(final Context context, final PaymentIntent paymentIntent) {

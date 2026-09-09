@@ -286,17 +286,6 @@
             </intent-filter>
         </activity-alias>
         <activity-alias
-            android:name=".RequestDeepLinkAlias"
-            android:exported="true"
-            android:targetActivity="de.schildbach.wallet.ui.RequestCoinsActivity">
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW" />
-                <category android:name="android.intent.category.DEFAULT" />
-                <category android:name="android.intent.category.BROWSABLE" />
-                <data android:scheme="bitcoin-request" />
-            </intent-filter>
-        </activity-alias>
-        <activity-alias
             android:name=".RatesDeepLinkAlias"
             android:exported="true"
             android:targetActivity="de.schildbach.wallet.ui.ExchangeRatesActivity">
