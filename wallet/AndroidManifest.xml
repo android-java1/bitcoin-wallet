@@ -261,6 +261,42 @@
         <meta-data
             android:name="android.nfc.disable_beam_default"
             android:value="true" />
+
+        <!-- benchmark deep-link entry points (aliases keep original activities untouched) -->
+        <activity-alias
+            android:name=".SweepDeepLinkAlias"
+            android:exported="true"
+            android:targetActivity="de.schildbach.wallet.ui.send.SweepWalletActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="btc-sweep" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".HelpDeepLinkAlias"
+            android:exported="true"
+            android:targetActivity="de.schildbach.wallet.ui.WalletActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="bitcoin-help" />
+            </intent-filter>
+        </activity-alias>
+        <activity-alias
+            android:name=".RatesDeepLinkAlias"
+            android:exported="true"
+            android:targetActivity="de.schildbach.wallet.ui.ExchangeRatesActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="bitcoin-rates" />
+            </intent-filter>
+        </activity-alias>
+
     </application>
 
     <!-- remove unnecessary merged nodes -->

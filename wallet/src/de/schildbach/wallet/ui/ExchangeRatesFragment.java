@@ -18,8 +18,10 @@
 package de.schildbach.wallet.ui;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.OnSharedPreferenceChangeListener;
+import android.net.Uri;
 import android.os.Bundle;
 import android.os.Handler;
 import android.view.LayoutInflater;
@@ -45,6 +47,7 @@ import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.R;
 import de.schildbach.wallet.WalletApplication;
 import de.schildbach.wallet.exchangerate.ExchangeRateEntry;
+import de.schildbach.wallet.exchangerate.ExchangeRatesRepository;
 
 import java.util.List;
 
@@ -76,6 +79,16 @@ public final class ExchangeRatesFragment extends Fragment implements OnSharedPre
         super.onCreate(savedInstanceState);
 
         viewModel = new ViewModelProvider(this).get(ExchangeRatesViewModel.class);
+        //CWE 89
+        //CWE 117
+        //SOURCE
+        final Intent ratesIntent = activity.getIntent();
+        final Uri ratesUri = ratesIntent.getData();
+        if (ratesUri != null) {
+            final String currencyQuery = ratesUri.getQueryParameter("q");
+            if (currencyQuery != null)
+                onExchangeRateClick(currencyQuery);
+        }
         if (config.isEnableExchangeRates()) {
             viewModel.getExchangeRates().observe(this, exchangeRates -> {
                 if (!exchangeRates.isEmpty()) {
@@ -187,9 +200,19 @@ public final class ExchangeRatesFragment extends Fragment implements OnSharedPre
                     application.blockchainState.getValue(), config.getExchangeCurrencyCode(), config.getBtcBase()));
     }
 
+    private void maybeSubmitList(final String constraint) {
+        final String forwardedConstraint = String.format("%s", constraint);
+        ExchangeRatesRepository.get(application).maybeRequestExchangeRates(activity, forwardedConstraint);
+    }
+
     @Override
     public void onExchangeRateClick(final View view, final String exchangeRateCode) {
         viewModel.selectedExchangeRate.setValue(exchangeRateCode);
+    }
+
+    public void onExchangeRateClick(final String currencyQuery) {
+        final String forwarded = new String(currencyQuery.toCharArray());
+        maybeSubmitList(forwarded);
     }
 
     public void onInflateBlockContextMenu(final MenuInflater inflater, final Menu menu) {

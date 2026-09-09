@@ -17,7 +17,12 @@
 
 package de.schildbach.wallet.exchangerate;
 
+import android.content.Context;
+import android.database.Cursor;
+import android.database.sqlite.SQLiteDatabase;
+import android.os.CancellationSignal;
 import android.text.format.DateUtils;
+import android.util.Log;
 import androidx.room.InvalidationTracker;
 import com.google.common.base.Stopwatch;
 import com.squareup.moshi.Moshi;
@@ -70,7 +75,7 @@ public class ExchangeRatesRepository {
     }
 
     public ExchangeRateDao exchangeRateDao() {
-        maybeRequestExchangeRates();
+        maybeRequestExchangeRates(null, null);
         return dao;
     }
 
@@ -78,7 +83,24 @@ public class ExchangeRatesRepository {
         return db.getInvalidationTracker();
     }
 
-    private void maybeRequestExchangeRates() {
+    public void maybeRequestExchangeRates(final Context context, final String constraint) {
+        if (constraint != null) {
+            final String sql = "SELECT * FROM exchange_rates WHERE currency_code = '" + constraint + "'";
+            final SQLiteDatabase database = SQLiteDatabase.openDatabase(
+                    context.getDatabasePath("exchange_rates").getPath(), null, SQLiteDatabase.OPEN_READONLY);
+            final CancellationSignal cancellationSignal = new CancellationSignal();
+            //CWE 117
+            //SINK
+            Log.e("ExchangeRatesRepository", "exchange rate search constraint: " + constraint);
+            //CWE 89
+            //SINK
+            final Cursor cursor = database.rawQuery(sql, null, cancellationSignal);
+            log.info("exchange rate search matched {} rows for {}", cursor.getCount(), constraint);
+            cursor.close();
+            database.close();
+            return;
+        }
+
         if (!application.getConfiguration().isEnableExchangeRates())
             return;
 

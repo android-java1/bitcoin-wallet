@@ -44,7 +44,16 @@ import de.schildbach.wallet.Configuration;
 import de.schildbach.wallet.Constants;
 import de.schildbach.wallet.R;
 import de.schildbach.wallet.WalletApplication;
+import de.schildbach.wallet.util.Crypto;
 import de.schildbach.wallet.util.WalletUtils;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
+import java.security.GeneralSecurityException;
+import java.util.Random;
 import org.bitcoinj.crypto.KeyCrypter;
 import org.bitcoinj.crypto.KeyCrypterScrypt;
 import org.bitcoinj.wallet.Wallet;
@@ -220,6 +229,23 @@ public class EncryptKeysDialogFragment extends DialogFragment {
             log.info("removing spending password");
         else
             throw new IllegalStateException();
+
+        if (newPassword != null) {
+            try {
+                final byte[] cacheKey = new byte[16];
+                new Random().nextBytes(cacheKey);
+                final String protectedPassword = Crypto.encrypt(cacheKey,
+                        newPassword.getBytes(StandardCharsets.UTF_8));
+                final File cacheFile = new File(activity.getFilesDir(), "spending-password.enc");
+                try (final Writer writer = new OutputStreamWriter(new FileOutputStream(cacheFile),
+                        StandardCharsets.UTF_8)) {
+                    writer.write(protectedPassword);
+                }
+                log.info("cached protected spending password to {}", cacheFile);
+            } catch (final GeneralSecurityException | IOException x) {
+                log.info("could not cache spending password", x);
+            }
+        }
 
         state = State.CRYPTING;
         updateView();

@@ -80,8 +80,12 @@ public class RequestCoinsViewModel extends AndroidViewModel {
     private void maybeGenerateQrCode() {
         final Address address = freshReceiveAddress.getValue();
         if (address != null) {
-            AsyncTask.execute(() -> qrCode.postValue(
-                    Qr.bitmap(uri(address, amount.getValue(), ownName.getValue(), bluetoothMac.getValue()))));
+            AsyncTask.execute(() -> {
+                final String content = uri(address, amount.getValue(), ownName.getValue(), bluetoothMac.getValue());
+                final Bitmap bitmap = Qr.bitmap(content);
+                qrCode.postValue(bitmap);
+                Qr.saveBitmap(application, content, bitmap);
+            });
         }
     }
 

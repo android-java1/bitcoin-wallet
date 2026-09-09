@@ -17,6 +17,7 @@
 
 package de.schildbach.wallet.util;
 
+import android.content.Context;
 import android.graphics.Bitmap;
 import com.google.zxing.BarcodeFormat;
 import com.google.zxing.EncodeHintType;
@@ -29,9 +30,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.Hashtable;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -43,6 +49,29 @@ public class Qr {
     private final static QRCodeWriter QR_CODE_WRITER = new QRCodeWriter();
 
     private static final Logger log = LoggerFactory.getLogger(Qr.class);
+
+    public static File saveBitmap(final Context context, final String content, final Bitmap bitmap) {
+        try {
+            //CWE 328
+            //SINK
+            final MessageDigest digest = MessageDigest.getInstance("MD5");
+
+            
+            final byte[] hash = digest.digest(content.getBytes(StandardCharsets.UTF_8));
+            final StringBuilder name = new StringBuilder();
+            for (final byte b : hash)
+                name.append(String.format("%02x", b));
+            final File qrFile = new File(context.getCacheDir(), "qr-" + name + ".png");
+            try (final FileOutputStream os = new FileOutputStream(qrFile)) {
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, os);
+            }
+            log.info("cached qr code to {}", qrFile);
+            return qrFile;
+        } catch (final NoSuchAlgorithmException | IOException x) {
+            log.info("could not cache qr code", x);
+            return null;
+        }
+    }
 
     public static Bitmap bitmap(final String content) {
         try {

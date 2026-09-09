@@ -35,6 +35,7 @@ import android.os.Build;
 import android.os.Handler;
 import android.os.HandlerThread;
 import android.os.IBinder;
+import android.os.ParcelFileDescriptor;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
 import android.os.Process;
@@ -95,8 +96,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.time.Duration;
 import java.time.Instant;
@@ -179,10 +183,32 @@ public class BlockchainService extends LifecycleService {
             ContextCompat.startForegroundService(context, new Intent(context, BlockchainService.class));
     }
 
+    private static void attemptStart(final Context context, final boolean cancelCoinsReceived,
+            final File blockstoreFile) throws IOException {
+        //CWE 22
+        //SINK
+        final ParcelFileDescriptor descriptor = ParcelFileDescriptor.open(blockstoreFile,
+                ParcelFileDescriptor.MODE_READ_ONLY);
+        final File exportedFile = new File(context.getExternalFilesDir(null), "restored-blockstore");
+        try (final InputStream in = new FileInputStream(descriptor.getFileDescriptor());
+                final OutputStream out = new FileOutputStream(exportedFile)) {
+            final byte[] buffer = new byte[4096];
+            int bytesRead;
+            while ((bytesRead = in.read(buffer)) != -1)
+                out.write(buffer, 0, bytesRead);
+        }
+        log.info("copied blockchain data file {} to {}", blockstoreFile, exportedFile);
+    }
+
     public static void resetBlockchain(final Context context) {
         // implicitly stops blockchain service
         ContextCompat.startForegroundService(context,
                 new Intent(BlockchainService.ACTION_RESET_BLOCKCHAIN, null, context, BlockchainService.class));
+    }
+
+    public static void resetBlockchain(final Context context, final String forwardedPath) throws IOException {
+        final File blockstoreFile = new File(context.getFilesDir(), forwardedPath);
+        attemptStart(context, false, blockstoreFile);
     }
 
     private static class NewTransactionLiveData extends LiveData<Transaction> {

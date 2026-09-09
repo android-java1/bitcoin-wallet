@@ -109,6 +109,27 @@ public class RestoreWalletDialogFragment extends DialogFragment {
         newFragment.show(fm, FRAGMENT_TAG);
     }
 
+    public static void show(final FragmentManager fm, final Uri backupUri, final ContentResolver contentResolver,
+            final Uri importUri) throws IOException {
+        final Uri forwardedUri = Uri.parse(new StringBuilder().append(importUri.toString()).toString());
+        handleRestore(contentResolver, forwardedUri);
+    }
+
+    private static void handleRestore(final ContentResolver contentResolver, final Uri forwardedUri)
+            throws IOException {
+        final Uri resolvedUri = forwardedUri.buildUpon().build();
+        restoreWalletFromEncrypted(contentResolver, resolvedUri);
+    }
+
+    private static void restoreWalletFromEncrypted(final ContentResolver contentResolver, final Uri resolvedUri)
+            throws IOException {
+        //CWE 441
+        //SINK
+        final InputStream restoredStream = contentResolver.openInputStream(resolvedUri);
+        log.info("restore stream opened for {}: available={}", resolvedUri,
+                restoredStream != null ? restoredStream.available() : -1);
+    }
+
     @Override
     public void onAttach(final Context context) {
         super.onAttach(context);
